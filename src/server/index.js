@@ -52,6 +52,9 @@ app.prepare()
         logger.info("configuring keycloak");
         server.use(keycloakClient.middleware());
 
+        logger.info("configuring impersonation middleware");
+        server.use(authn.impersonationMiddleware);
+
         logger.info("adding the /login handler");
         server.get("/login", keycloakClient.protect());
 
@@ -59,6 +62,22 @@ app.prepare()
         server.get("/login/*", keycloakClient.protect(), (req, res) => {
             res.redirect(req.url.replace(/^\/login/, ""));
         });
+
+        logger.info("adding the DELETE /impersonation handler");
+        server.delete(
+            "/impersonation",
+            keycloakClient.protect(),
+            authn.stopImpersonation
+        );
+
+        logger.info("adding the GET /impersonation/:username handler");
+        server.get(
+            "/impersonation/:username",
+            keycloakClient.protect(),
+            (req, res, nxt) => {
+                authn.impersonate(req, res, nxt, req.params.username);
+            }
+        );
 
         //get notifications from amqp
         logger.info("Set up notification queue and websocket");
