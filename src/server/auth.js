@@ -11,12 +11,26 @@ import keycloak from "keycloak-connect";
 import * as config from "./configuration";
 
 /**
+ * Obtains the access token that is currently in effect if any are in effect.
+ * Some administrators have the ability to impersonate other users for
+ * troubleshooting purposes. If impersonation is in effect then the effective
+ * token is the one that was obtained in order to impersonate another user.
+ * Otherwise, the effective token is the user's actual token. If the user is
+ * not logged in at all then a null value will be returned.
+ *
+ * @param {Object} req
+ */
+export const getEffectiveToken = (req) => {
+    return req?.iauth?.grant?.access_token || req?.kauth?.grant?.access_token;
+};
+
+/**
  * Extracts the username from the calims in the JWT access token.
  *
  * @param {Object} req
  */
 export const getUserID = (req) => {
-    return req?.kauth?.grant?.access_token?.content?.preferred_username;
+    return getEffectiveToken(req)?.content?.preferred_username;
 };
 
 /**
@@ -25,7 +39,7 @@ export const getUserID = (req) => {
  * @param {Object} req
  */
 export const getUserProfile = (req) => {
-    const accessToken = req?.kauth?.grant?.access_token;
+    const accessToken = getEffectiveToken(req);
     if (accessToken) {
         return {
             id: accessToken.content.preferred_username,
@@ -46,7 +60,7 @@ export const getUserProfile = (req) => {
  * Adds the access token to the Authorization header if it's present in the request.
  */
 export const authnTokenMiddleware = (req, res, next) => {
-    const token = req?.kauth?.grant?.access_token?.token;
+    const token = getEffectiveToken(req).token;
 
     if (token) {
         req.headers["Authorization"] = `Bearer ${token}`;
@@ -92,6 +106,7 @@ export const sessionMiddleware = () =>
     });
 
 let keycloakClient;
+
 /**
  * Returns a newly instantiated Keycloak client.
  *

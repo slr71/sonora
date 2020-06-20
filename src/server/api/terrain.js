@@ -9,6 +9,7 @@
 import path from "path";
 import querystring from "querystring";
 
+import { getEffectiveToken } from "../auth";
 import { terrainURL } from "../configuration";
 import logger from "../logging";
 import axiosInstance from "../../common/getAxios";
@@ -25,7 +26,7 @@ import axiosInstance from "../../common/getAxios";
  */
 export const handler = ({ method, pathname, headers }) => {
     return async (req, res) => {
-        const accessToken = req?.kauth?.grant?.access_token;
+        const accessToken = getEffectiveToken(req);
         call(
             {
                 method,

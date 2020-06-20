@@ -10,6 +10,7 @@ import querystring from "querystring";
 import path from "path";
 import logger from "../logging";
 
+import { getEffectiveToken } from "../auth";
 import { terrainURL } from "../configuration";
 
 /**
@@ -22,7 +23,7 @@ import { terrainURL } from "../configuration";
  * @returns null
  */
 const handler = async (req, res) => {
-    const accessToken = req?.kauth?.grant?.access_token;
+    const accessToken = getEffectiveToken(req);
     if (!accessToken) {
         res.status(401).send("authorization required");
         return;
